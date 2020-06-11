@@ -22,41 +22,43 @@ public class CircularBufferImpl<T> implements CircularBuffer<T>{
     }
 
     private void updateFreeSpaces(int usedSpaces){
-        if (this.freeSpaces > 0){
-            if (this.freeSpaces >= usedSpaces) this.freeSpaces = this.freeSpaces - usedSpaces;
-            else this.freeSpaces = 0;
+        if (this.freeSpaces > 0) {
+            if (this.freeSpaces >= usedSpaces) {
+                this.freeSpaces = this.freeSpaces - usedSpaces;
+            } else {
+                this.freeSpaces = 0;
+            }
         }
     }
 
     @Override
     public void append(T[] items) throws IndexOutOfBoundsException {
         validateInputData(items);
-        for (T item: items){
+        for (T item: items) {
             this.tailPosition = (this.tailPosition + 1) % this.size;
             this.data[tailPosition] = item;
         }
         updateFreeSpaces(items.length);
-        this.headPosition = this.freeSpaces + this.tailPosition + 1;
+        this.headPosition = (this.freeSpaces + this.tailPosition + 1) % this.size;
     }
 
     @Override
     public void prepend(T[] items) throws IndexOutOfBoundsException{
         validateInputData(items);
-        for (int i = items.length - 1; i > -1; i--){
-            this.headPosition = (this.headPosition + this.size - 1) % this.size;
+        for (int i = items.length - 1; i > -1; i--) {
+            this.headPosition = Math.floorMod(this.headPosition - 1, this.size);
             this.data[headPosition] = items[i];
         }
         updateFreeSpaces(items.length);
-        this.tailPosition = (this.headPosition - this.freeSpaces - 1 + this.size) % this.size;
+        this.tailPosition = Math.floorMod(this.headPosition - this.freeSpaces - 1, this.size);
     }
 
     @Override
     public T get(int index) throws IndexOutOfBoundsException{
-        if (getCount() == 0 || index >= getCount() || index < 0){
+        if (getCount() == 0 || index >= getCount() || index < 0) {
             throw new IndexOutOfBoundsException();
-        }
-        else {
-            index = (this.headPosition + index + this.size) % this.size;
+        } else {
+            index = Math.floorMod(this.headPosition + index, this.size);
             return (T) data[index];
         }
     }
