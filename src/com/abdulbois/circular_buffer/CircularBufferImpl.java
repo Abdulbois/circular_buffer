@@ -2,48 +2,84 @@ package com.abdulbois.circular_buffer;
 
 public class CircularBufferImpl<T> implements CircularBuffer<T>{
 
-    private Object[] data;
-    private int size;
-    private int headPosition;
-    private int tailPosition;
+    private final Object[] data;
+    private final int size;
+    private int headPosition = 1;
+    private int tailPosition = -1;
+    private int freeSpaces = 0;
 
     public CircularBufferImpl(int maxSize){
         this.data = new Object[maxSize];
-        size = maxSize;
-    }
-
-    @Override
-    public void append(T[] items) {
-        if (items.length >= 1 && items.length < size) System.arraycopy(items, 0, data, 0, items.length);
-    }
-
-    @Override
-    public void prepend(T[] items) {
+        this.size = maxSize;
+        this.freeSpaces = maxSize;
 
     }
 
+    private void validateInputData(T[] items){
+        if (items.length > this.size) {
+            throw new IndexOutOfBoundsException();
+        }
+    }
+
+    private void updateFreeSpaces(int usedSpaces){
+        if (this.freeSpaces > 0){
+            if (this.freeSpaces >= usedSpaces) this.freeSpaces = this.freeSpaces - usedSpaces;
+            else this.freeSpaces = 0;
+        }
+    }
+
     @Override
-    public T get(int index) {
-        return (T) data[index];
+    public void append(T[] items) throws IndexOutOfBoundsException {
+        validateInputData(items);
+        for (T item: items){
+            this.tailPosition = (this.tailPosition + 1) % this.size;
+            this.data[tailPosition] = item;
+        }
+        updateFreeSpaces(items.length);
+        this.headPosition = this.freeSpaces + this.tailPosition + 1;
+    }
+
+    @Override
+    public void prepend(T[] items) throws IndexOutOfBoundsException{
+        validateInputData(items);
+        for (int i = items.length - 1; i > -1; i--){
+            this.headPosition = (this.headPosition + this.size - 1) % this.size;
+            this.data[headPosition] = items[i];
+        }
+        updateFreeSpaces(items.length);
+        this.tailPosition = (this.headPosition - this.freeSpaces - 1 + this.size) % this.size;
+    }
+
+    @Override
+    public T get(int index) throws IndexOutOfBoundsException{
+        if (getCount() == 0 || index >= getCount() || index < 0){
+            throw new IndexOutOfBoundsException();
+        }
+        else {
+            index = (this.headPosition + index + this.size) % this.size;
+            return (T) data[index];
+        }
     }
 
     @Override
     public void clear() {
-
+        this.headPosition = 1;
+        this.tailPosition = -1;
+        this.freeSpaces = this.size;
     }
 
     @Override
     public int getCount() {
-        return size;
+        return this.size - this.freeSpaces;
     }
 
     @Override
     public boolean isFull() {
-        return false;
+        return getCount() == this.size;
     }
 
     @Override
     public boolean isEmpty() {
-        return false;
+        return getCount() == 0;
     }
 }
