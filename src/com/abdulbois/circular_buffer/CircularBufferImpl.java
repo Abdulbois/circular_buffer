@@ -1,6 +1,8 @@
 package com.abdulbois.circular_buffer;
 
-public class CircularBufferImpl<T> implements CircularBuffer<T>{
+import java.util.Iterator;
+
+public class CircularBufferImpl<T> implements CircularBuffer<T>, Iterable<T>{
 
     private final Object[] data;
     private final int size;
@@ -84,4 +86,31 @@ public class CircularBufferImpl<T> implements CircularBuffer<T>{
     public boolean isEmpty() {
         return getCount() == 0;
     }
+
+    @Override
+    public Iterator<T> iterator() {
+        return new CircularBufferIterator(this);
+    }
+
+    private class CircularBufferIterator implements Iterator<T>{
+        int cursor = 0;
+        int lastRet = -1;
+        CircularBuffer<T> buffer;
+
+        public CircularBufferIterator(CircularBuffer<T> buffer){
+            this.buffer = buffer;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return cursor != this.buffer.getCount();
+        }
+
+        @Override
+        public T next() {
+            cursor++;
+            return this.buffer.get(lastRet+cursor);
+        }
+    }
 }
+

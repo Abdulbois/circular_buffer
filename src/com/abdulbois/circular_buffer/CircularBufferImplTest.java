@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class CircularBufferImplTest {
 
-    private CircularBuffer<Integer> circularBuffer;
+    private CircularBufferImpl<Integer> circularBuffer;
     private Integer [] integerList;
 
     @BeforeEach
@@ -149,5 +149,15 @@ class CircularBufferImplTest {
         circularBuffer.prepend(Arrays.copyOfRange(integerList, 0, 10));
         assertFalse(circularBuffer.isEmpty());
 
+    }
+
+    @Test
+    void iterator(){
+        circularBuffer.append(Arrays.copyOfRange(integerList, 0, 10));
+        int i=0;
+        for(Integer e: circularBuffer){
+            assertEquals(integerList[i], e);
+            i++;
+        }
     }
 }
