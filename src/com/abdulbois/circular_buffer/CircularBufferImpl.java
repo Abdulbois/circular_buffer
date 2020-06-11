@@ -8,7 +8,7 @@ public class CircularBufferImpl<T> implements CircularBuffer<T>, Iterable<T>{
     private final int size;
     private int headPosition = 1;
     private int tailPosition = -1;
-    private int freeSpaces = 0;
+    private int freeSpaces;
 
     public CircularBufferImpl(int maxSize){
         this.data = new Object[maxSize];
