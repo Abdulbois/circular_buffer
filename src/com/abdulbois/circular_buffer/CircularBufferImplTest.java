@@ -1,7 +1,6 @@
 package com.abdulbois.circular_buffer;
 
 import org.junit.jupiter.api.*;
-
 import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.*;

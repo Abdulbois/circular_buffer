@@ -1,6 +1,9 @@
 package com.abdulbois.circular_buffer;
 
 import java.util.Iterator;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class CircularBufferImpl<T> implements CircularBuffer<T>, Iterable<T>{
 
@@ -9,6 +12,9 @@ public class CircularBufferImpl<T> implements CircularBuffer<T>, Iterable<T>{
     private int headPosition = 1;
     private int tailPosition = -1;
     private int freeSpaces;
+    private final ReadWriteLock rw_lock = new ReentrantReadWriteLock(true);
+    private final Lock r_lock = rw_lock.readLock();
+    private final Lock w_lock = rw_lock.writeLock();
 
     public CircularBufferImpl(int maxSize){
         this.data = new Object[maxSize];
@@ -35,41 +41,62 @@ public class CircularBufferImpl<T> implements CircularBuffer<T>, Iterable<T>{
 
     @Override
     public void append(T[] items) throws IndexOutOfBoundsException {
-        validateInputData(items);
-        for (T item: items) {
-            this.tailPosition = (this.tailPosition + 1) % this.size;
-            this.data[tailPosition] = item;
+        w_lock.lock();
+        try {
+            validateInputData(items);
+            for (T item: items) {
+                this.tailPosition = (this.tailPosition + 1) % this.size;
+                this.data[tailPosition] = item;
+            }
+            updateFreeSpaces(items.length);
+            this.headPosition = (this.freeSpaces + this.tailPosition + 1) % this.size;
+        } finally {
+            w_lock.unlock();
         }
-        updateFreeSpaces(items.length);
-        this.headPosition = (this.freeSpaces + this.tailPosition + 1) % this.size;
+
     }
 
     @Override
-    public void prepend(T[] items) throws IndexOutOfBoundsException{
-        validateInputData(items);
-        for (int i = items.length - 1; i > -1; i--) {
-            this.headPosition = Math.floorMod(this.headPosition - 1, this.size);
-            this.data[headPosition] = items[i];
+    public void prepend(T[] items) throws IndexOutOfBoundsException {
+        w_lock.lock();
+        try {
+            validateInputData(items);
+            for (int i = items.length - 1; i > -1; i--) {
+                this.headPosition = Math.floorMod(this.headPosition - 1, this.size);
+                this.data[headPosition] = items[i];
+            }
+            updateFreeSpaces(items.length);
+            this.tailPosition = Math.floorMod(this.headPosition - this.freeSpaces - 1, this.size);
+        } finally {
+            w_lock.unlock();
         }
-        updateFreeSpaces(items.length);
-        this.tailPosition = Math.floorMod(this.headPosition - this.freeSpaces - 1, this.size);
     }
 
     @Override
     public T get(int index) throws IndexOutOfBoundsException{
-        if (getCount() == 0 || index >= getCount() || index < 0) {
-            throw new IndexOutOfBoundsException();
-        } else {
-            index = Math.floorMod(this.headPosition + index, this.size);
-            return (T) data[index];
+        r_lock.lock();
+        try {
+            if (getCount() == 0 || index >= getCount() || index < 0) {
+                throw new IndexOutOfBoundsException();
+            } else {
+                index = Math.floorMod(this.headPosition + index, this.size);
+                return (T) data[index];
+            }
+        } finally {
+            r_lock.unlock();
         }
     }
 
     @Override
     public void clear() {
-        this.headPosition = 1;
-        this.tailPosition = -1;
-        this.freeSpaces = this.size;
+        w_lock.lock();
+        try {
+            this.headPosition = 1;
+            this.tailPosition = -1;
+            this.freeSpaces = this.size;
+        } finally {
+            w_lock.unlock();
+        }
     }
 
     @Override
